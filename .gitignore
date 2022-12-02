@@ -10,3 +10,4 @@ build/
 **/nohup.out
 details.log
 *.pyc
+**/computer-network-router
