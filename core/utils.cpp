@@ -35,6 +35,19 @@
 
 namespace simple_router {
 
+// check Ethernet header, ignore target address neithor broadcast nor current iface
+bool
+check_eth_dest(const uint8_t* src, const uint8_t* tar)
+{
+  int pos = 0;
+  for (; pos < ETHER_ADDR_LEN; pos++) {
+    if(src[pos] != tar[pos]) {
+      return false;
+    }
+  }
+  return true;
+}
+
 uint16_t
 cksum(const void* _data, int len)
 {

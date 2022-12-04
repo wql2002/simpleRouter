@@ -34,6 +34,7 @@
 
 namespace simple_router {
 
+bool check_eth_dest(const uint8_t* src, const uint8_t* tar);
 uint16_t cksum(const void* data, int len);
 uint16_t ethertype(const uint8_t* buf);
 uint8_t ip_protocol(const uint8_t* buf);

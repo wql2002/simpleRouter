@@ -42,7 +42,7 @@ SimpleRouter::handlePacket(const Buffer& packet, const std::string& inIface)
   // FILL THIS IN
 
   //-------------------------------my code--------------------------------
-  // print_hdrs(packet);
+  print_hdrs(packet);
   const uint8_t* buf = packet.data();
   uint32_t length = packet.size();
   /* Ethernet */
@@ -54,6 +54,17 @@ SimpleRouter::handlePacket(const Buffer& packet, const std::string& inIface)
   }
 
   uint16_t ethtype = ethertype(buf);
+
+  // check Ethernet header
+  const uint8_t* if_MAC = iface->addr.data();
+  const uint8_t broad_cast[ETHER_ADDR_LEN] = {255, 255, 255, 255, 255, 255};
+  // ignore frame that target neithor this iface nor broadcast
+  if(!check_eth_dest(ehdr->ether_dhost, if_MAC)) {
+    if(!check_eth_dest(ehdr->ether_dhost, broad_cast)) {
+      fprintf(stderr, "Failed to match Ethernet header target addr\n");
+      return;
+    }
+  }
 
   if (ethtype == ethertype_ip) { /* IP */
     minlength += sizeof(ip_hdr);
@@ -95,14 +106,15 @@ SimpleRouter::handlePacket(const Buffer& packet, const std::string& inIface)
     }
     else {
       // get ARP header in Ethernet frame
-      const arp_hdr *arphdr = reinterpret_cast<const arp_hdr*>(buf + sizeof(ethernet_hdr));
+      // const arp_hdr *arphdr = reinterpret_cast<const arp_hdr*>(buf + sizeof(ethernet_hdr));
+      arp_hdr *arphdr = (arp_hdr*)(buf + sizeof(ethernet_hdr));
       // do i have the hardware type "Ethernet"?
       if(ntohs(arphdr->arp_hrd) != arp_hrd_ethernet) {
         fprintf(stderr, "Failed to match arp_hrd, Incorrect hardware type\n");
         return;
       }
       else {
-        fprintf(stderr, "Succed to match arp_hrd\n");
+        fprintf(stderr, "Succeed to match arp_hrd\n");
         // do i speak the protocol "IPv4"?
         if(ntohs(arphdr->arp_pro) != ethertype_ip) {
           fprintf(stderr, "Failed to match arp_pro, Incorrect protocol type\n");
@@ -130,24 +142,40 @@ SimpleRouter::handlePacket(const Buffer& packet, const std::string& inIface)
               // swap hardware and protocol field
 
               // Ethernet header
-              const uint8_t* if_MAC = iface->addr.data();
               // memcpy(ehdr->ether_dhost, ehdr->ether_shost, sizeof(ehdr->ether_shost));
               // memcpy(ehdr->ether_shost, if_MAC, sizeof(if_MAC));
-              memcpy(ehdr->ether_dhost, ehdr->ether_shost, 6);
-              memcpy(ehdr->ether_shost, if_MAC, 6);
+              memcpy(ehdr->ether_dhost, ehdr->ether_shost, ETHER_ADDR_LEN);
+              memcpy(ehdr->ether_shost, if_MAC, ETHER_ADDR_LEN);
 
               // ARP header
               // arphdr->tha = arphdr->sha; // hardware addr
-              memcpy(arphdr->tha, arphdr->sha, 6);
-              arphdr->tip = arphdr->sip; // ip addr
+              memcpy(arphdr->arp_tha, arphdr->arp_sha, ETHER_ADDR_LEN);
+              arphdr->arp_tip = arphdr->arp_sip; // ip addr
               // arphdr->sha = iface->addr;
-              memcpy(arphdr->sha, if_MAC, 6);
-              arphdr->sip = iface->ip;
-              // opcode
-              //arphdr->arp_op = arp_op_reply;
-              // test
+              memcpy(arphdr->arp_sha, if_MAC, ETHER_ADDR_LEN);
+              arphdr->arp_sip = iface->ip;
+              // opcode: reply
+              arphdr->arp_op = ntohs(arp_op_reply);
+              // debug
               print_hdr_eth(buf);
               print_hdr_arp(buf + sizeof(ethernet_hdr));
+              // print_hdrs(buf, length);
+
+              // sent ARP reply 
+              // Buffer out_packet(buf, buf+strlen((const char*)buf));
+              // fprintf(stderr, "origin packet size: %u\n", length);
+              // uint32_t out_len = out_packet.size();
+              // fprintf(stderr, "output packet size: %u\n", out_len);
+              // print_hdrs(out_packet);
+              Buffer out_packet(buf, buf+length);
+
+              // find outInterface through target IP addr
+              // const Interface* outIf = findIfaceByIp(arphdr->arp_tip);
+              // printIfaces(std::cerr);
+              // std::cerr << outIf << std::endl;
+
+              // send ARP reply frame out through outIf
+              sendPacket(out_packet, iface->name);
             }
             else { /* reply */
               fprintf(stderr, "Succeed to receive a ARP reply packet\n");
