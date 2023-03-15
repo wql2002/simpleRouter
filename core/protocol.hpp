@@ -63,6 +63,15 @@ struct icmp_hdr {
   uint16_t icmp_sum;
 } __attribute__ ((packed)) ;
 
+/* Structure of a type0 ICMP header: Echo Reply
+ */
+struct icmp_t0_hdr {
+  uint8_t icmp_type;
+  uint8_t icmp_code;
+  uint16_t icmp_sum;
+  uint16_t icmp_id;
+  uint16_t icmp_seq;
+} __attribute__ ((packed)) ;
 
 /* Structure of a type3 ICMP header: Destination Unreachable
  */
@@ -75,7 +84,7 @@ struct icmp_t3_hdr {
   uint8_t data[ICMP_DATA_SIZE];
 } __attribute__ ((packed)) ;
 
-/* Structure of a type8 ICMP header: Echo/Echo Reply
+/* Structure of a type8 ICMP header: Echo
  */
 struct icmp_t8_hdr {
   uint8_t icmp_type;
@@ -83,7 +92,6 @@ struct icmp_t8_hdr {
   uint16_t icmp_sum;
   uint16_t icmp_id;
   uint16_t icmp_seq;
-  uint8_t data[ICMP_DATA_SIZE];
 } __attribute__ ((packed)) ;
 
 /* Structure of a type11 ICMP header: Time Exceeded
@@ -97,6 +105,7 @@ struct icmp_t11_hdr {
   uint8_t data[ICMP_DATA_SIZE];
 } __attribute__ ((packed)) ;
 
+
 /*
  * Structure of the IP header, naked of options.
  */
@@ -109,7 +118,6 @@ struct ip_hdr
   unsigned int ip_v:4;             /* version */
   unsigned int ip_hl:4;            /* header length */
 #else
-
 #error "Byte ordering ot specified "
 #endif
   uint8_t ip_tos;                  /* type of service */
@@ -142,8 +150,17 @@ struct ethernet_hdr
 } __attribute__ ((packed)) ;
 
 
+enum icmp_type {
+  icmp_echo = 8,
+  icmp_echo_reply = 0,
+  icmp_time_exceeded = 11,
+  icmp_unreachable = 3
+};
+
 enum ip_protocol {
   ip_protocol_icmp = 0x0001,
+  ip_protocol_tcp = 0x6,
+  ip_protocol_udp = 0x11,
 };
 
 enum ethertype {

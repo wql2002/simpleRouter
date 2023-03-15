@@ -43,6 +43,20 @@ public:
   void
   handlePacket(const Buffer& packet, const std::string& inIface);
 
+  void
+  sendICMP(uint8_t type, uint8_t code, const Buffer& packet, const std::string& inIface);
+  
+  void
+  sendForwardIP(const Buffer& mac, const Buffer& packet, const std::string& inIface);
+  
+  void
+  sendARP(unsigned short opcode, const Buffer& packet, const std::string& inIface);
+
+  void
+  processARP(const Buffer& packet);
+
+  bool
+  checkDestined(uint32_t dst_ip);
   /**
    * USE THIS METHOD TO SEND PACKETS
    *

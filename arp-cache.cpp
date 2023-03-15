@@ -30,9 +30,64 @@ namespace simple_router {
 void
 ArpCache::periodicCheckArpRequestsAndCacheEntries()
 {
+  // update ARP request
+  for(auto iterator_req = m_arpRequests.begin(); iterator_req != m_arpRequests.end(); ) {
+    // Handle ARP Request
 
-  // FILL THIS IN
+    // first send flag
+    int flag = 0;
+    auto entry = *iterator_req;
+    if(entry->nTimesSent == 0) { /* never be sent */
+      fprintf(stderr, "this ARP request first been sent!\n");
+      flag = 1;
+    }
+    // fprintf(stderr, "Update ARP Cache every second!\n");
+    auto now = steady_clock::now();
+    if((flag || (now - entry->timeSent) > seconds(1))) {
+      fprintf(stderr, "Update ARP Cache!\n");
+      const PendingPacket& first_packet(entry->packets.front());
+      if(entry->nTimesSent >= 5) {
+        for(auto& packet: entry->packets) {
+          // send ICMP host unreachable back
+          // find that packet origin interface
+          Buffer thisPacket(packet.packet);
+          const uint8_t* buf = thisPacket.data();
+          ethernet_hdr *ehdr = (ethernet_hdr *)buf;
+          Buffer inMac(ehdr->ether_dhost, ehdr->ether_dhost+ETHER_ADDR_LEN);
+          const Interface* inFace = m_router.findIfaceByMac(inMac);
+          // m_router.sendICMP(icmp_unreachable, 3, packet.packet, packet.iface);
+          fprintf(stderr, "Succeed to send ICMP post unreachable after sending 5 ARP request!\n");
+          m_router.sendICMP(icmp_unreachable, 3, packet.packet, inFace->name);
+        }
+        // removeRequest(entry);
+        // m_arpRequests.remove(entry);
+        iterator_req = m_arpRequests.erase(iterator_req);
+        fprintf(stderr, "Succeed to remove ARP request!\n");
+        continue;
+      }
+      else {
+        // send ARP request
+        fprintf(stderr, "Succeed to send ARP request!\n");
+        m_router.sendARP(arp_op_request, first_packet.packet, first_packet.iface);
+        // entry->packets
+        entry->timeSent = now;
+        entry->nTimesSent++;
+      }
+    }
+    // when no request be removed, iterator++
+    iterator_req++;
+  }
 
+  // update Cache
+  for(auto cache = m_cacheEntries.begin(); cache != m_cacheEntries.end();) {
+    // remove old cache(>30s)
+    if(!((*cache)->isValid)) {
+      cache = m_cacheEntries.erase(cache);
+    }
+    else {
+      cache++;
+    }
+  }
 }
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////

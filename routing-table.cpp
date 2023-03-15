@@ -22,19 +22,64 @@
 #include <assert.h>
 #include <string.h>
 #include <unistd.h>
+#include <iostream>
 
 namespace simple_router {
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 // IMPLEMENT THIS METHOD
+// get 1's number in binary expression
+uint32_t
+RoutingTable::get1num(const uint32_t prefix) const {
+  uint32_t count = 0;
+  uint32_t tmp = prefix;
+  while(tmp) {
+    if(tmp & 1){
+      count++;
+    }
+    tmp >>= 1;
+  }
+  return count;
+}
+
 RoutingTableEntry
 RoutingTable::lookup(uint32_t ip) const
 {
+  uint32_t longest_pre_len = 0;
+  const RoutingTableEntry* longest_entry = NULL;
+  const RoutingTableEntry* default_entry = NULL;
+  
+  for (auto& entry : m_entries) {
+    // subnet prefix
+    uint32_t prefix = entry.dest & entry.mask;
+    // std::cerr << ipToString(prefix) << std::endl;
+    // prefix length
+    uint32_t pre_len = get1num(prefix);
+    // std::cerr << pre_len << std::endl;
 
-  // FILL THIS IN
 
+    // result != 0 ---> match
+    if((ip & prefix) == prefix) {
+      if(pre_len > longest_pre_len) {
+        longest_entry = &entry;
+        longest_pre_len = pre_len;
+        continue;
+      }
+    }
+    if(prefix == 0) { /* default subnet prefix 0.0.0.0 */
+      default_entry = &entry;
+    }
+  }
+
+  if(longest_entry) {
+    return (*longest_entry);
+  }
+  else if(default_entry) {
+    return (*default_entry);
+  }
   throw std::runtime_error("Routing entry not found");
+
 }
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////

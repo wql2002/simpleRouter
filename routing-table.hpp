@@ -48,6 +48,9 @@ public:
   RoutingTableEntry
   lookup(uint32_t ip) const;
 
+  uint32_t
+  get1num(uint32_t prefix) const;
+
   bool
   load(const std::string& file);
 

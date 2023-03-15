@@ -192,6 +192,12 @@ void print_hdr_icmp(const uint8_t* buf) {
   fprintf(stderr, "\tchecksum: %d\n", hdr->icmp_sum);
 }
 
+void print_hdr_icmp_echo(const uint8_t* buf) {
+  const icmp_t0_hdr *hdr = reinterpret_cast<const icmp_t0_hdr*>(buf);
+  fprintf(stderr, "ICMP ECHO header cont':\n");
+  fprintf(stderr, "\ttype: %d\n", hdr->icmp_id);
+  fprintf(stderr, "\tcode: %d\n", hdr->icmp_seq);
+}
 
 /* Prints out fields in ARP header */
 void print_hdr_arp(const uint8_t* buf) {

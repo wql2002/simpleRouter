@@ -143,6 +143,8 @@ public:
   void
   periodicCheckArpRequestsAndCacheEntries();
 
+  void
+  handleRequest(const std::shared_ptr<ArpRequest>& entry);
   /**
    * Checks if an IP->MAC mapping is in the cache. IP is in network byte order.
    * You must free the returned structure if it is not NULL.

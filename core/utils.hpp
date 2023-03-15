@@ -54,6 +54,7 @@ ipToString(const in_addr& address);
 void print_hdr_eth(const uint8_t* buf);
 void print_hdr_ip(const uint8_t* buf);
 void print_hdr_icmp(const uint8_t* buf);
+void print_hdr_icmp_echo(const uint8_t* buf);
 void print_hdr_arp(const uint8_t* buf);
 
 /* prints all headers, starting from eth */
